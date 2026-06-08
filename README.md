@@ -122,4 +122,4 @@ Targets `@modelcontextprotocol/sdk` ≥ 1.20 and the 2025-06-18 MCP authorizatio
 
 ## License
 
-MIT © [Koduhai](https://github.com/koduhai). Built and maintained alongside [KoduhMail](https://koduhmail.com), whose own MCP server runs on this kit.
+MIT © [Koduhai](https://github.com/koduhai). Built alongside [KoduhMail](https://koduhmail.com), generalizing the auth + versioning patterns from its MCP server.
