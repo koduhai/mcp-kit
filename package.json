@@ -1,0 +1,83 @@
+{
+  "name": "@koduhai/mcp-kit",
+  "version": "0.1.0",
+  "description": "Auth and versioning for MCP servers, solved. Upstream API auth (API key / bearer / OAuth client-credentials), API versioning with a get_version tool, and a one-call OAuth 2.1 Resource Server (JWKS + introspection verifiers, RFC 9728 metadata) on top of the MCP SDK.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "oauth",
+    "oauth2",
+    "authorization",
+    "jwt",
+    "jwks",
+    "token-introspection",
+    "ai-agents",
+    "llm",
+    "versioning"
+  ],
+  "license": "MIT",
+  "author": "Koduhai",
+  "homepage": "https://github.com/koduhai/mcp-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koduhai/mcp-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koduhai/mcp-kit/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./upstream": {
+      "types": "./dist/upstream/index.d.ts",
+      "import": "./dist/upstream/index.js"
+    },
+    "./versioning": {
+      "types": "./dist/versioning/index.d.ts",
+      "import": "./dist/versioning/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": ">=1.20.0",
+    "express": "^4.19.0 || ^5.0.0",
+    "jose": "^5.9.0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": { "optional": true },
+    "express": { "optional": true },
+    "jose": { "optional": true }
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/supertest": "^6.0.0",
+    "express": "^5.0.0",
+    "jose": "^6.0.0",
+    "supertest": "^7.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
