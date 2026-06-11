@@ -8,7 +8,7 @@ By participating you agree to abide by our [Code of Conduct](./CODE_OF_CONDUCT.m
 
 ## Getting started
 
-Requirements: **Node.js >= 18** and npm.
+Requirements: **Node.js >= 20** and npm.
 
 ```bash
 git clone https://github.com/koduhai/mcp-kit.git
@@ -29,8 +29,10 @@ src/
   upstream/     # zero-dep: how your server authenticates to the API it wraps
   versioning/   # zero-dep: pin/send an API version, expose get_version
   auth/         # server-side OAuth 2.1 Resource Server helpers (optional peers)
+  server/       # serveTools: mount ToolDescriptors on an MCP Server (optional peer)
+  internal/     # shared, non-exported helpers (fetch timeout/retry)
   index.ts      # root entry: re-exports the zero-dep modules
-examples/       # runnable reference servers (stdio + remote OAuth)
+examples/       # reference servers (stdio + remote OAuth), typechecked in CI
 ```
 
 Each module has a colocated `*.test.ts`. The library has **zero runtime dependencies**
@@ -40,16 +42,19 @@ keep it that way — see [Design principles](#design-principles).
 
 ## Development workflow
 
-| Command                | What it does                       |
-| ---------------------- | ---------------------------------- |
-| `npm test`             | Run the vitest suite once          |
-| `npm run test:watch`   | Run vitest in watch mode           |
-| `npm run typecheck`    | `tsc --noEmit` (strict)            |
-| `npm run lint`         | ESLint over `src` + `examples`     |
-| `npm run format`       | Apply Prettier formatting          |
-| `npm run format:check` | Verify formatting (what CI checks) |
-| `npm run build`        | Emit `dist/` via `tsc`             |
-| `npm run check`        | All of the above gates in one shot |
+| Command                 | What it does                                                         |
+| ----------------------- | -------------------------------------------------------------------- |
+| `npm test`              | Run the vitest suite once                                            |
+| `npm run test:watch`    | Run vitest in watch mode                                             |
+| `npm run typecheck`     | `tsc --noEmit` (strict)                                              |
+| `npm run lint`          | ESLint over `src` + `examples`                                       |
+| `npm run format`        | Apply Prettier formatting                                            |
+| `npm run format:check`  | Verify formatting (what CI checks)                                   |
+| `npm run build`         | Emit `dist/` via `tsc`                                               |
+| `npm run check`         | typecheck + lint + format:check + test, in one shot                  |
+| `npm run test:coverage` | Run tests with coverage + thresholds                                 |
+| `npm run check:exports` | Validate the published package (publint + attw); needs a build first |
+| `npm run docs`          | Generate the TypeDoc API reference                                   |
 
 ## Making a change
 
@@ -64,23 +69,36 @@ keep it that way — see [Design principles](#design-principles).
 5. **Update docs** (`README.md`) and **`CHANGELOG.md`** under `## [Unreleased]` if your
    change is user-visible.
 
-## Commit messages
+## Commit messages and PR titles
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) for subjects:
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 <type>: <imperative summary>
 ```
 
-e.g. `fix: refresh client-credentials token before exp, not after`. Keep the subject
-under ~72 characters and use the body to explain **why**, not just what.
+Allowed `<type>`s: `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `ci`,
+`build`. Keep the subject under ~72 characters, start it lowercase, no trailing period,
+and use the body to explain **why** (e.g. `fix: refresh client-credentials token before exp, not after`).
+
+**The PR title is what matters most.** PRs are **squash-merged**, so the PR title becomes
+the single commit on `main` — and our release tooling ([release-please](https://github.com/googleapis/release-please))
+turns those commits into the version bump and `CHANGELOG.md` entry:
+
+- `fix:` → patch release · `feat:` → minor release · `feat!:` / a `BREAKING CHANGE:`
+  footer in the PR body → major release.
+- `chore:`/`docs:`/`ci:`/etc. don't trigger a release on their own.
+
+A CI check (**Validate PR title**) enforces this, so a non-conforming title blocks merge.
+Your local commits can be messy — they get squashed away.
 
 ## Opening a pull request
 
-- Fill out the PR template (it's short).
-- Link any related issue (`Closes #123`).
-- Make sure CI is green. PRs are gated on lint, format, typecheck, build, and the test
-  suite across Node 18 / 20 / 22.
+- Give the PR a Conventional-Commits title (see above) — it's the commit + release note.
+- Fill out the PR template (it's short) and link any related issue (`Closes #123`).
+- Make sure CI is green. PRs are gated on PR-title validation, lint, format, typecheck,
+  build, the test suite across Node 20 / 22 / 24, coverage thresholds, and package
+  (publint/attw) checks.
 - A maintainer will review. Small, well-tested PRs get merged fastest.
 
 ## Design principles
