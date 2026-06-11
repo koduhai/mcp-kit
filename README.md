@@ -107,8 +107,11 @@ const verifier = introspectionVerifier({
   introspectionUrl: 'https://your-tenant.auth0.com/oauth/introspect',
   clientId: process.env.RS_CLIENT_ID!,
   clientSecret: process.env.RS_CLIENT_SECRET!,
+  cacheTtlSeconds: 60, // cache active results (default 60); set 0 to introspect every request
 });
 ```
+
+Introspection results are cached for a short TTL (capped by the token's own `exp`) and deduplicated while a call is in flight, so a busy server doesn't introspect the same token on every request. Caching delays revocation visibility by at most the TTL; set `cacheTtlSeconds: 0` if every request must hit the AS.
 
 Works with any standards-compliant IdP: Auth0, Logto, Clerk, Keycloak, Okta, Cognito, WorkOS, and friends. mcp-kit verifies tokens; it does not try to be your Authorization Server (the spec says don't, and you shouldn't).
 
@@ -119,7 +122,8 @@ See [`examples/`](./examples) for a full stdio server and a full remote OAuth se
 ## Design
 
 - **Layered, optional peers.** `/upstream` and `/versioning` have zero dependencies. `/auth` declares `@modelcontextprotocol/sdk`, `express`, and `jose` as _optional_ peers, so you only install them if you build a remote server.
-- **Injectable everything.** Every network call and clock is injectable, so the whole thing is tested offline (36 tests, including a real Express + token-verification integration).
+- **Injectable everything.** Every network call and clock is injectable, so the whole thing is tested offline (46 tests, including a real Express + token-verification integration).
+- **Resilient outbound calls.** Every control-plane request the library makes (token, introspection, JWKS, discovery) carries a timeout (default 10s, configurable via `timeoutMs`) so an unresponsive IdP can't hang your server.
 - **ESM, Node ≥ 20, TypeScript-first.**
 
 ## Compatibility
