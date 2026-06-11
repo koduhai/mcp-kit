@@ -4,12 +4,7 @@
 [![codecov](https://codecov.io/gh/koduhai/mcp-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/koduhai/mcp-kit)
 [![npm version](https://img.shields.io/npm/v/@koduhai/mcp-kit.svg)](https://www.npmjs.com/package/@koduhai/mcp-kit)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/koduhai/mcp-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/koduhai/mcp-kit)
-
-<!-- OpenSSF Best Practices: register this repo at https://www.bestpractices.dev,
-     then replace PROJECT_ID below and uncomment to publish the badge.
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/PROJECT_ID/badge)](https://www.bestpractices.dev/projects/PROJECT_ID)
--->
-
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13169/badge)](https://www.bestpractices.dev/projects/13169)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/node/v/@koduhai/mcp-kit.svg)](https://nodejs.org)
 
