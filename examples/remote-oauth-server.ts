@@ -1,7 +1,7 @@
 /**
  * Example: a remote (Streamable HTTP) MCP server that is a spec-compliant OAuth 2.1
  * Resource Server. Tokens are issued by your existing IdP (Auth0, Logto, Clerk, Keycloak,
- * Cognito, ...); mcp-kit verifies them and serves the discovery metadata. Reference snippet.
+ * Cognito, ...); mcp-kit verifies them and serves the discovery metadata. Typechecked in CI.
  */
 import express from 'express';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';

@@ -1,0 +1,18 @@
+{
+  // Typecheck the example snippets against the locally built dist, so they can't
+  // drift from the real public API. Requires `npm run build` first (CI does this).
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "lib": ["ES2022", "DOM"],
+    "paths": {
+      "@koduhai/mcp-kit/upstream": ["../dist/upstream/index.d.ts"],
+      "@koduhai/mcp-kit/versioning": ["../dist/versioning/index.d.ts"],
+      "@koduhai/mcp-kit/auth": ["../dist/auth/index.d.ts"],
+      "@koduhai/mcp-kit/server": ["../dist/server/index.d.ts"]
+    }
+  },
+  "include": ["*.ts"],
+  "exclude": []
+}

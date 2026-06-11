@@ -65,6 +65,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "typecheck:examples": "tsc -p examples/tsconfig.json",
+    "docs": "typedoc",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
@@ -96,6 +98,7 @@
     "jose": "^6.0.0",
     "prettier": "^3.8.4",
     "supertest": "^7.0.0",
+    "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.0",
     "vitest": "^4.1.8"
