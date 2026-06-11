@@ -1,6 +1,6 @@
 {
   "name": "@koduhai/mcp-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Auth and versioning for MCP servers, solved. Upstream API auth (API key / bearer / OAuth client-credentials), API versioning with a get_version tool, and a one-call OAuth 2.1 Resource Server (JWKS + introspection verifiers, RFC 9728 metadata) on top of the MCP SDK.",
   "keywords": [
     "mcp",

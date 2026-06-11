@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/koduhai/mcp-kit/compare/mcp-kit-v0.2.0...mcp-kit-v0.3.0) (2026-06-11)
+
+
+### Features
+
+* honor Retry-After + make JWKS path testable ([cfdbecc](https://github.com/koduhai/mcp-kit/commit/cfdbecc242a5498c3d8d9a020cb1a3f717ba8c31))
+* honor Retry-After and make JWKS path testable ([3dcf6a3](https://github.com/koduhai/mcp-kit/commit/3dcf6a3e55c1d87b7663607ccdd86fbb5bb4701d))
+
+
+### Bug Fixes
+
+* upgrade npm in release job for OIDC trusted publishing ([0e0090f](https://github.com/koduhai/mcp-kit/commit/0e0090fe9c61b0ccd2f03d532ee8bc1af2cfbb18))
+* upgrade npm in release job for OIDC trusted publishing ([cc3b16a](https://github.com/koduhai/mcp-kit/commit/cc3b16a2453df8d78f79d70d630b542c3917baa7))
+
 ## [0.2.0](https://github.com/koduhai/mcp-kit/compare/mcp-kit-v0.1.0...mcp-kit-v0.2.0) (2026-06-11)
 
 
