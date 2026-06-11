@@ -12,10 +12,10 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'json-summary'],
       // Regression floor, set just below the current baseline. Raise as coverage grows.
       thresholds: {
-        statements: 85,
-        branches: 70,
-        functions: 90,
-        lines: 85,
+        statements: 90,
+        branches: 78,
+        functions: 95,
+        lines: 92,
       },
     },
   },

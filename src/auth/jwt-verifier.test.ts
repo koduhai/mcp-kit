@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { generateKeyPair, SignJWT, type CryptoKey } from 'jose';
+import { describe, it, expect, vi } from 'vitest';
+import { generateKeyPair, SignJWT, exportJWK, type CryptoKey } from 'jose';
 import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { jwtVerifier } from './jwt-verifier.js';
 
@@ -78,5 +78,36 @@ describe('jwtVerifier', () => {
     await expect(
       jwtVerifier({ issuer: ISS, audience: AUD, key: otherPub }).verifyAccessToken(token),
     ).rejects.toBeInstanceOf(InvalidTokenError);
+  });
+
+  it('discovers the JWKS from the issuer and verifies against it (no `key`)', async () => {
+    const { publicKey, privateKey } = await keys();
+    const jwk = await exportJWK(publicKey);
+    jwk.kid = 'key-1';
+    const token = await new SignJWT({ sub: 'u', client_id: 'client-1', scope: 'mcp:tools' })
+      .setProtectedHeader({ alg: 'RS256', kid: 'key-1' })
+      .setIssuedAt()
+      .setIssuer(ISS)
+      .setAudience(AUD)
+      .setExpirationTime('1h')
+      .sign(privateKey);
+
+    // One fetch serves both AS metadata discovery and the JWKS document.
+    const fetch = vi.fn(async (url: unknown) => {
+      const u = String(url);
+      if (u.includes('/.well-known/oauth-authorization-server')) {
+        return new Response(JSON.stringify({ issuer: ISS, jwks_uri: `${ISS}/jwks` }), { status: 200 });
+      }
+      if (u === `${ISS}/jwks`) {
+        return new Response(JSON.stringify({ keys: [jwk] }), { status: 200 });
+      }
+      return new Response('not found', { status: 404 });
+    }) as unknown as typeof globalThis.fetch;
+
+    const info = await jwtVerifier({ issuer: ISS, audience: AUD, fetch }).verifyAccessToken(token);
+    expect(info.clientId).toBe('client-1');
+    expect(info.scopes).toEqual(['mcp:tools']);
+    // Discovery + JWKS were both fetched through the injected fetch.
+    expect(fetch).toHaveBeenCalled();
   });
 });

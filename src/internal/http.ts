@@ -35,6 +35,21 @@ export async function fetchWithTimeout(
 /** HTTP status codes worth retrying: rate limiting and transient server errors. */
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
+/** Upper bound on any single retry wait, so a hostile `Retry-After` can't stall a request. */
+const MAX_RETRY_DELAY_MS = 30_000;
+
+/**
+ * Parse a `Retry-After` header into milliseconds. Handles the delta-seconds form
+ * (e.g. `120`); the HTTP-date form is not special-cased and falls back to backoff.
+ * Capped at {@link MAX_RETRY_DELAY_MS}.
+ */
+function parseRetryAfterMs(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const seconds = Number(header);
+  if (!Number.isFinite(seconds) || seconds < 0) return undefined;
+  return Math.min(seconds * 1000, MAX_RETRY_DELAY_MS);
+}
+
 export interface RetryOptions {
   /** Number of retries after the first attempt. Default 0 (no retries). */
   retries?: number;
@@ -47,7 +62,9 @@ export interface RetryOptions {
 /**
  * `fetchWithTimeout` plus bounded exponential-backoff retries on transient
  * failures (network errors, 429, and 5xx). A timeout abort counts as a failure
- * and is retried. With `retries: 0` (the default) this is exactly one attempt.
+ * and is retried. On a 429/503 carrying a `Retry-After` header, that delay is
+ * honored (capped) instead of the backoff. With `retries: 0` (the default) this
+ * is exactly one attempt.
  */
 export async function fetchWithRetry(
   fetchImpl: typeof globalThis.fetch,
@@ -65,14 +82,15 @@ export async function fetchWithRetry(
     try {
       const res = await fetchWithTimeout(fetchImpl, input, init, timeoutMs);
       if (RETRYABLE_STATUS.has(res.status) && attempt < retries) {
-        await sleep(base * 2 ** attempt);
+        const backoff = Math.min(base * 2 ** attempt, MAX_RETRY_DELAY_MS);
+        await sleep(parseRetryAfterMs(res.headers.get('retry-after')) ?? backoff);
         attempt++;
         continue;
       }
       return res;
     } catch (e) {
       if (attempt >= retries) throw e;
-      await sleep(base * 2 ** attempt);
+      await sleep(Math.min(base * 2 ** attempt, MAX_RETRY_DELAY_MS));
       attempt++;
     }
   }

@@ -87,4 +87,64 @@ describe('fetchWithRetry', () => {
     expect(res.status).toBe(400);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
+
+  it('honors a numeric Retry-After header instead of the backoff', async () => {
+    const delays: number[] = [];
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      return n < 2
+        ? new Response('', { status: 429, headers: { 'retry-after': '5' } })
+        : new Response('ok', { status: 200 });
+    }) as unknown as typeof globalThis.fetch;
+    const res = await fetchWithRetry(fetch, 'https://x', {}, 1000, {
+      retries: 2,
+      retryBaseDelayMs: 200,
+      sleep: (ms) => {
+        delays.push(ms);
+        return Promise.resolve();
+      },
+    });
+    expect(res.status).toBe(200);
+    expect(delays).toEqual([5000]); // 5s from Retry-After, not the 200ms backoff
+  });
+
+  it('caps an excessive Retry-After at 30s', async () => {
+    const delays: number[] = [];
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      return n < 2
+        ? new Response('', { status: 503, headers: { 'retry-after': '3600' } })
+        : new Response('ok', { status: 200 });
+    }) as unknown as typeof globalThis.fetch;
+    await fetchWithRetry(fetch, 'https://x', {}, 1000, {
+      retries: 1,
+      sleep: (ms) => {
+        delays.push(ms);
+        return Promise.resolve();
+      },
+    });
+    expect(delays).toEqual([30_000]);
+  });
+
+  it('falls back to backoff when Retry-After is not a number', async () => {
+    const delays: number[] = [];
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      return n < 2
+        ? new Response('', { status: 429, headers: { 'retry-after': 'Wed, 21 Oct 2026 07:28:00 GMT' } })
+        : new Response('ok', { status: 200 });
+    }) as unknown as typeof globalThis.fetch;
+    await fetchWithRetry(fetch, 'https://x', {}, 1000, {
+      retries: 1,
+      retryBaseDelayMs: 200,
+      sleep: (ms) => {
+        delays.push(ms);
+        return Promise.resolve();
+      },
+    });
+    expect(delays).toEqual([200]); // HTTP-date form ignored -> backoff
+  });
 });
