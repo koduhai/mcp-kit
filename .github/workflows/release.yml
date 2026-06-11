@@ -36,7 +36,9 @@ jobs:
   publish:
     name: Publish to npm
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    # Publishes on a release-please release, or manually via workflow_dispatch
+    # (re-publishing the current package.json version, e.g. to recover a failed run).
+    if: ${{ needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -49,6 +51,8 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
           cache: npm
+      # Node 20 ships npm 10; OIDC trusted publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
       - run: npm ci
       # Re-verify the package is sound before publishing anything.
       - run: npm run lint
