@@ -120,7 +120,7 @@ See [`examples/`](./examples) for a full stdio server and a full remote OAuth se
 
 - **Layered, optional peers.** `/upstream` and `/versioning` have zero dependencies. `/auth` declares `@modelcontextprotocol/sdk`, `express`, and `jose` as _optional_ peers, so you only install them if you build a remote server.
 - **Injectable everything.** Every network call and clock is injectable, so the whole thing is tested offline (36 tests, including a real Express + token-verification integration).
-- **ESM, Node ≥ 18, TypeScript-first.**
+- **ESM, Node ≥ 20, TypeScript-first.**
 
 ## Compatibility
 
