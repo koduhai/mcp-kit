@@ -14,6 +14,10 @@ concurrency:
 permissions:
   contents: read
 
+# CI never commits, so skip installing the husky git hooks during `npm ci`.
+env:
+  HUSKY: '0'
+
 jobs:
   lint:
     name: Lint & format
