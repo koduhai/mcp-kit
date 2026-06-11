@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # npm dependencies (devDependencies + peer ranges).
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Batch routine dev-tooling bumps into one PR to cut noise.
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # Keep GitHub Actions pinned-SHA references current.
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly

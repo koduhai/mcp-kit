@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a defect in @koduhai/mcp-kit
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for filing a bug. Please do not include access tokens, secrets, or other credentials.
+  - type: input
+    id: version
+    attributes:
+      label: mcp-kit version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Which entry point?
+      options:
+        - '@koduhai/mcp-kit/upstream'
+        - '@koduhai/mcp-kit/versioning'
+        - '@koduhai/mcp-kit/auth'
+        - Not sure / other
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      placeholder: v20.x
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Steps or a small code snippet that reproduces the issue.
+      render: ts
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or errors
+      description: Redact any tokens, secrets, or PII before pasting.
+      render: shell
