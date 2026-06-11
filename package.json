@@ -70,6 +70,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck:examples": "tsc -p examples/tsconfig.json",
+    "check:exports": "publint && attw --pack . --profile esm-only",
     "docs": "typedoc",
     "prepublishOnly": "npm run build"
   },
@@ -90,6 +91,7 @@
     }
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.3",
     "@eslint/js": "^10.0.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@types/express": "^5.0.0",
@@ -101,6 +103,7 @@
     "express": "^5.0.0",
     "jose": "^6.0.0",
     "prettier": "^3.8.4",
+    "publint": "^0.3.21",
     "supertest": "^7.0.0",
     "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
