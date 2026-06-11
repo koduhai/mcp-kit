@@ -2,6 +2,7 @@
  * Upstream auth: how your MCP server authenticates to the API/service it wraps.
  * Zero dependencies, zero transport assumptions. Works with stdio or HTTP servers.
  */
+import { DEFAULT_TIMEOUT_MS, fetchWithTimeout } from '../internal/http.js';
 
 /** A strategy that produces the headers to attach to each upstream request. */
 export interface UpstreamAuth {
@@ -58,6 +59,8 @@ export interface ClientCredentialsOptions {
   audience?: string;
   /** Refresh this many seconds before the token actually expires. Default 60. */
   refreshSkewSeconds?: number;
+  /** Timeout (ms) for the token request. Default 10000. Pass 0 to disable. */
+  timeoutMs?: number;
   /** Injectable for tests. */
   fetch?: typeof globalThis.fetch;
   /** Injectable clock (ms). */
@@ -89,11 +92,16 @@ export function clientCredentialsAuth(opts: ClientCredentialsOptions): UpstreamA
     if (opts.scope) body.set('scope', opts.scope);
     if (opts.audience) body.set('audience', opts.audience);
 
-    const res = await fetchImpl(opts.tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-      body,
-    });
+    const res = await fetchWithTimeout(
+      fetchImpl,
+      opts.tokenUrl,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+        body,
+      },
+      opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    );
     const text = await res.text();
     let json: Record<string, unknown>;
     try {
@@ -147,6 +155,11 @@ export interface UpstreamFetchOptions {
   auth?: UpstreamAuth;
   /** Extra headers merged into every request (e.g. a versioning header source). */
   headers?: HeaderSource;
+  /**
+   * Per-request timeout (ms). Off by default so long-running upstream calls are
+   * never cut short unexpectedly; set it to opt in. Pass 0 to disable explicitly.
+   */
+  timeoutMs?: number;
   /** Injectable for tests. */
   fetch?: typeof globalThis.fetch;
 }
@@ -169,6 +182,9 @@ export function createUpstreamFetch(opts: UpstreamFetchOptions): typeof globalTh
     let target: FetchInput = input;
     if (base && typeof input === 'string' && input.startsWith('/')) target = base + input;
 
-    return fetchImpl(target, { ...init, headers: merged });
+    const req = { ...init, headers: merged };
+    return opts.timeoutMs != null
+      ? fetchWithTimeout(fetchImpl, target, req, opts.timeoutMs)
+      : fetchImpl(target, req);
   }) as typeof globalThis.fetch;
 }

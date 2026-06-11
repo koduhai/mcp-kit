@@ -1,6 +1,9 @@
 import type { OAuthMetadata } from '@modelcontextprotocol/sdk/shared/auth.js';
+import { DEFAULT_TIMEOUT_MS, fetchWithTimeout } from '../internal/http.js';
 
 export interface DiscoverOptions {
+  /** Timeout (ms) per discovery request. Default 10000. Pass 0 to disable. */
+  timeoutMs?: number;
   /** Injectable for tests. */
   fetch?: typeof globalThis.fetch;
 }
@@ -17,6 +20,7 @@ export async function discoverOAuthMetadata(
   opts: DiscoverOptions = {},
 ): Promise<OAuthMetadata> {
   const fetchImpl = opts.fetch ?? globalThis.fetch;
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const base = issuer.replace(/\/+$/, '');
   const candidates = [
     `${base}/.well-known/oauth-authorization-server`,
@@ -26,7 +30,12 @@ export async function discoverOAuthMetadata(
   let lastErr: unknown;
   for (const url of candidates) {
     try {
-      const res = await fetchImpl(url, { headers: { Accept: 'application/json' } });
+      const res = await fetchWithTimeout(
+        fetchImpl,
+        url,
+        { headers: { Accept: 'application/json' } },
+        timeoutMs,
+      );
       if (res.ok) return (await res.json()) as OAuthMetadata;
       lastErr = new Error(`HTTP ${res.status} from ${url}`);
     } catch (e) {

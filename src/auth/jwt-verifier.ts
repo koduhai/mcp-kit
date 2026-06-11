@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import type { OAuthTokenVerifier } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import { DEFAULT_TIMEOUT_MS } from '../internal/http.js';
 import { discoverOAuthMetadata } from './metadata.js';
 
 /** The accepted forms for the verification key (a key, a JWKS, or a key-resolving function). */
@@ -21,6 +22,8 @@ export interface JwtVerifierOptions {
   algorithms?: string[];
   /** Clock skew tolerance in seconds for `exp`/`nbf`. Default 5. */
   clockToleranceSeconds?: number;
+  /** Timeout (ms) for JWKS fetch and issuer discovery. Default 10000. */
+  timeoutMs?: number;
   /** Claim to read scopes from. By default tries `scope` (space-delimited) then `scp` (array). */
   scopeClaim?: string;
   /** Provide the key directly (a `KeyLike`/JWKS/resolver) instead of discovering it. Mainly for tests. */
@@ -59,14 +62,18 @@ export function jwtVerifier(opts: JwtVerifierOptions): OAuthTokenVerifier {
     resolving = (async () => {
       let jwksUri = opts.jwksUri;
       if (!jwksUri) {
-        const meta = (await discoverOAuthMetadata(opts.issuer, { fetch: opts.fetch })) as {
+        const meta = (await discoverOAuthMetadata(opts.issuer, {
+          fetch: opts.fetch,
+          timeoutMs: opts.timeoutMs,
+        })) as {
           jwks_uri?: string;
         };
         jwksUri = meta.jwks_uri;
         if (!jwksUri)
           throw new Error('jwtVerifier: issuer metadata has no jwks_uri; pass `jwksUri` or `key`');
       }
-      keyInput = createRemoteJWKSet(new URL(jwksUri));
+      const jwksTimeout = opts.timeoutMs && opts.timeoutMs > 0 ? opts.timeoutMs : DEFAULT_TIMEOUT_MS;
+      keyInput = createRemoteJWKSet(new URL(jwksUri), { timeoutDuration: jwksTimeout });
       return keyInput;
     })();
     try {
