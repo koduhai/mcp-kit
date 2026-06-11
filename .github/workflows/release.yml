@@ -1,23 +1,47 @@
 name: Release
 
-# Publishes to npm when a semver tag (e.g. v0.2.0) is pushed.
-# Uses npm Trusted Publishing (OIDC) — no NPM_TOKEN secret required.
-# One-time setup: on npmjs.com, add this repo + workflow as a trusted publisher for
-# the @koduhai/mcp-kit package (Settings -> Publishing access -> Trusted Publisher).
+# Release-please maintains a "release PR" that bumps the version and CHANGELOG from
+# conventional commits. Merging that PR creates the GitHub release + tag, and the
+# publish job below then publishes to npm via OIDC trusted publishing (no NPM_TOKEN).
+#
+# Publishing lives in this same workflow on purpose: a GITHUB_TOKEN-created tag does
+# not trigger a separate tag-watching workflow, so a split would never fire.
+#
+# One-time setup:
+#   - npmjs.com: add this repo + workflow `release.yml` (environment `release`) as a
+#     Trusted Publisher for @koduhai/mcp-kit.
+#   - GitHub Settings -> Actions -> General: enable "Allow GitHub Actions to create
+#     and approve pull requests" so release-please can open its PR.
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+  workflow_dispatch:
 
-permissions:
-  contents: read
-  id-token: write # required for OIDC trusted publishing + provenance
+permissions: {}
 
 jobs:
+  release-please:
+    name: Release PR / tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: rp
+
   publish:
     name: Publish to npm
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      contents: read
+      id-token: write # OIDC trusted publishing + provenance
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -25,25 +49,11 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
           cache: npm
-
       - run: npm ci
-
-      # Verify the package is sound before publishing anything.
+      # Re-verify the package is sound before publishing anything.
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-
-      # Fail fast if the tag (v1.2.3) doesn't match package.json's version (1.2.3).
-      - name: Verify tag matches package version
-        run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
-          if [ "$PKG_VERSION" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${PKG_VERSION}"
-            exit 1
-          fi
-
-      # npm >= 11.5.1 performs the OIDC exchange automatically; provenance is implied
-      # for trusted publishing but we pass it explicitly for clarity.
-      - name: Publish
-        run: npm publish --provenance --access public
+      # provenance + public access come from package.json publishConfig.
+      - run: npm publish
