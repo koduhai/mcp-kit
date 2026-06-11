@@ -123,13 +123,37 @@ Works with any standards-compliant IdP: Auth0, Logto, Clerk, Keycloak, Okta, Cog
 
 See [`examples/`](./examples) for a full stdio server and a full remote OAuth server.
 
+## 4. Mounting tools — `@koduhai/mcp-kit/server`
+
+`versionTool` (and your own tools) are plain, transport-agnostic [`ToolDescriptor`](./src/versioning/index.ts)s. `serveTools` wires a list of them onto a low-level MCP `Server` in one call: it registers the `tools/list` and `tools/call` handlers, JSON-encodes each result as MCP text content, and rejects unknown tool names. This is the only entry point that needs the MCP SDK at runtime.
+
+```ts
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { serveTools } from '@koduhai/mcp-kit/server';
+import { apiVersioning, versionTool } from '@koduhai/mcp-kit/versioning';
+
+const versioning = apiVersioning({ header: 'Api-Version', version: '2026-01-01' });
+const server = new Server({ name: 'my-mcp', version: '1.0.0' }, { capabilities: { tools: {} } });
+
+serveTools(server, [
+  versionTool(versioning),
+  {
+    name: 'get_widget',
+    description: 'Fetch a widget.',
+    inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+    handler: (a) => api(`/widgets/${a.id}`).then((r) => r.json()),
+  },
+]);
+// await server.connect(transport)
+```
+
 ---
 
 ## Design
 
-- **Layered, optional peers.** `/upstream` and `/versioning` have zero dependencies. `/auth` declares `@modelcontextprotocol/sdk`, `express`, and `jose` as _optional_ peers, so you only install them if you build a remote server.
-- **Injectable everything.** Every network call and clock is injectable, so the whole thing is tested offline (46 tests, including a real Express + token-verification integration).
-- **Resilient outbound calls.** Every control-plane request the library makes (token, introspection, JWKS, discovery) carries a timeout (default 10s, configurable via `timeoutMs`) so an unresponsive IdP can't hang your server.
+- **Layered, optional peers.** `/upstream` and `/versioning` have zero dependencies. `/auth` and `/server` declare `@modelcontextprotocol/sdk` (and `/auth` also `express` and `jose`) as _optional_ peers, so you only install them if you build a remote or SDK-backed server.
+- **Injectable everything.** Every network call and clock is injectable, so the whole thing is tested offline (57 tests, including a real Express + token-verification integration and an in-memory MCP client/server round trip).
+- **Resilient outbound calls.** Every control-plane request the library makes (token, introspection, JWKS, discovery) carries a timeout (default 10s, configurable via `timeoutMs`) and optional bounded retries (`retries`) so a slow or flaky IdP can't hang your server.
 - **ESM, Node ≥ 20, TypeScript-first.**
 
 ## Compatibility

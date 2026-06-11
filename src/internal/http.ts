@@ -31,3 +31,49 @@ export async function fetchWithTimeout(
     throw e;
   }
 }
+
+/** HTTP status codes worth retrying: rate limiting and transient server errors. */
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
+export interface RetryOptions {
+  /** Number of retries after the first attempt. Default 0 (no retries). */
+  retries?: number;
+  /** Base backoff in ms; doubles each attempt (200, 400, 800, ...). Default 200. */
+  retryBaseDelayMs?: number;
+  /** Injectable delay, for tests. */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+/**
+ * `fetchWithTimeout` plus bounded exponential-backoff retries on transient
+ * failures (network errors, 429, and 5xx). A timeout abort counts as a failure
+ * and is retried. With `retries: 0` (the default) this is exactly one attempt.
+ */
+export async function fetchWithRetry(
+  fetchImpl: typeof globalThis.fetch,
+  input: FetchInput,
+  init: RequestInit,
+  timeoutMs: number,
+  retry: RetryOptions = {},
+): Promise<Response> {
+  const retries = retry.retries ?? 0;
+  const base = retry.retryBaseDelayMs ?? 200;
+  const sleep = retry.sleep ?? ((ms) => new Promise<void>((r) => setTimeout(r, ms)));
+
+  let attempt = 0;
+  for (;;) {
+    try {
+      const res = await fetchWithTimeout(fetchImpl, input, init, timeoutMs);
+      if (RETRYABLE_STATUS.has(res.status) && attempt < retries) {
+        await sleep(base * 2 ** attempt);
+        attempt++;
+        continue;
+      }
+      return res;
+    } catch (e) {
+      if (attempt >= retries) throw e;
+      await sleep(base * 2 ** attempt);
+      attempt++;
+    }
+  }
+}

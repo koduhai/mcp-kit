@@ -2,12 +2,27 @@
  * Upstream auth: how your MCP server authenticates to the API/service it wraps.
  * Zero dependencies, zero transport assumptions. Works with stdio or HTTP servers.
  */
-import { DEFAULT_TIMEOUT_MS, fetchWithTimeout } from '../internal/http.js';
+import { DEFAULT_TIMEOUT_MS, fetchWithRetry, fetchWithTimeout } from '../internal/http.js';
 
 /** A strategy that produces the headers to attach to each upstream request. */
 export interface UpstreamAuth {
   /** Returns headers to merge into every upstream request. May refresh tokens internally. */
   headers(): Promise<Record<string, string>>;
+}
+
+/**
+ * Thrown when an OAuth token endpoint responds with an error or a malformed body.
+ * Carries the HTTP `status` and raw `responseBody` so callers can branch on them.
+ */
+export class TokenRequestError extends Error {
+  readonly status?: number;
+  readonly responseBody?: string;
+  constructor(message: string, opts?: { status?: number; responseBody?: string; cause?: unknown }) {
+    super(message, opts?.cause !== undefined ? { cause: opts.cause } : undefined);
+    this.name = 'TokenRequestError';
+    this.status = opts?.status;
+    this.responseBody = opts?.responseBody;
+  }
 }
 
 export interface ApiKeyAuthOptions {
@@ -61,6 +76,10 @@ export interface ClientCredentialsOptions {
   refreshSkewSeconds?: number;
   /** Timeout (ms) for the token request. Default 10000. Pass 0 to disable. */
   timeoutMs?: number;
+  /** Retries for transient token-endpoint failures (network, 429, 5xx). Default 0. */
+  retries?: number;
+  /** Base backoff (ms), doubled each retry. Default 200. */
+  retryBaseDelayMs?: number;
   /** Injectable for tests. */
   fetch?: typeof globalThis.fetch;
   /** Injectable clock (ms). */
@@ -92,7 +111,7 @@ export function clientCredentialsAuth(opts: ClientCredentialsOptions): UpstreamA
     if (opts.scope) body.set('scope', opts.scope);
     if (opts.audience) body.set('audience', opts.audience);
 
-    const res = await fetchWithTimeout(
+    const res = await fetchWithRetry(
       fetchImpl,
       opts.tokenUrl,
       {
@@ -101,6 +120,7 @@ export function clientCredentialsAuth(opts: ClientCredentialsOptions): UpstreamA
         body,
       },
       opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      { retries: opts.retries, retryBaseDelayMs: opts.retryBaseDelayMs },
     );
     const text = await res.text();
     let json: Record<string, unknown>;
@@ -110,13 +130,17 @@ export function clientCredentialsAuth(opts: ClientCredentialsOptions): UpstreamA
       json = {};
     }
     if (!res.ok) {
-      throw new Error(
+      throw new TokenRequestError(
         `clientCredentialsAuth: token request failed (${res.status}): ${String(json.error ?? text)}`,
+        { status: res.status, responseBody: text },
       );
     }
     const token = json.access_token;
     if (typeof token !== 'string' || !token) {
-      throw new Error('clientCredentialsAuth: response missing access_token');
+      throw new TokenRequestError('clientCredentialsAuth: response missing access_token', {
+        status: res.status,
+        responseBody: text,
+      });
     }
     const expiresIn = typeof json.expires_in === 'number' ? json.expires_in : 3600;
     cached = { token, expiresAtMs: now() + expiresIn * 1000 };

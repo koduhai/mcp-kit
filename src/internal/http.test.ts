@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fetchWithTimeout } from './http.js';
+import { fetchWithTimeout, fetchWithRetry } from './http.js';
 
 /** A fetch that never resolves on its own; it only settles when its signal aborts. */
 function hangingFetch() {
@@ -38,5 +38,53 @@ describe('fetchWithTimeout', () => {
     }) as unknown as typeof globalThis.fetch;
     const res = await fetchWithTimeout(fetch, 'https://x', {}, 0);
     expect(res.status).toBe(200);
+  });
+});
+
+describe('fetchWithRetry', () => {
+  const noSleep = () => Promise.resolve();
+
+  it('makes exactly one attempt with retries: 0', async () => {
+    const fetch = vi.fn(async () => new Response('', { status: 503 })) as unknown as typeof globalThis.fetch;
+    const res = await fetchWithRetry(fetch, 'https://x', {}, 1000, { retries: 0, sleep: noSleep });
+    expect(res.status).toBe(503);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a transient 503 and returns the eventual success', async () => {
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      return new Response('', { status: n < 3 ? 503 : 200 });
+    }) as unknown as typeof globalThis.fetch;
+    const res = await fetchWithRetry(fetch, 'https://x', {}, 1000, { retries: 3, sleep: noSleep });
+    expect(res.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries a thrown network error', async () => {
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      if (n === 1) throw new Error('ECONNRESET');
+      return new Response('ok', { status: 200 });
+    }) as unknown as typeof globalThis.fetch;
+    const res = await fetchWithRetry(fetch, 'https://x', {}, 1000, { retries: 2, sleep: noSleep });
+    expect(res.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after exhausting retries and returns the last response', async () => {
+    const fetch = vi.fn(async () => new Response('', { status: 500 })) as unknown as typeof globalThis.fetch;
+    const res = await fetchWithRetry(fetch, 'https://x', {}, 1000, { retries: 2, sleep: noSleep });
+    expect(res.status).toBe(500);
+    expect(fetch).toHaveBeenCalledTimes(3); // 1 + 2 retries
+  });
+
+  it('does not retry a non-retryable status (e.g. 400)', async () => {
+    const fetch = vi.fn(async () => new Response('', { status: 400 })) as unknown as typeof globalThis.fetch;
+    const res = await fetchWithRetry(fetch, 'https://x', {}, 1000, { retries: 3, sleep: noSleep });
+    expect(res.status).toBe(400);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
