@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { apiKeyAuth, bearerAuth, clientCredentialsAuth, createUpstreamFetch } from './index.js';
+import {
+  apiKeyAuth,
+  bearerAuth,
+  clientCredentialsAuth,
+  createUpstreamFetch,
+  TokenRequestError,
+} from './index.js';
 
 describe('apiKeyAuth', () => {
   it('defaults to Authorization: Bearer', async () => {
@@ -104,7 +110,7 @@ describe('clientCredentialsAuth', () => {
     expect(calls).toBe(1);
   });
 
-  it('throws on a non-2xx token response', async () => {
+  it('throws a TokenRequestError with status and body on a non-2xx token response', async () => {
     const fetch = vi.fn(
       async () => new Response(JSON.stringify({ error: 'invalid_client' }), { status: 401 }),
     );
@@ -114,7 +120,32 @@ describe('clientCredentialsAuth', () => {
       clientSecret: 'bad',
       fetch,
     });
-    await expect(auth.headers()).rejects.toThrow(/invalid_client/);
+    const err = await auth.headers().then(
+      () => null,
+      (e) => e,
+    );
+    expect(err).toBeInstanceOf(TokenRequestError);
+    expect(err.status).toBe(401);
+    expect(err.responseBody).toContain('invalid_client');
+  });
+
+  it('retries a transient 503 token response and succeeds', async () => {
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      if (n < 3) return new Response('', { status: 503 });
+      return new Response(JSON.stringify({ access_token: 'AT', expires_in: 3600 }), { status: 200 });
+    });
+    const auth = clientCredentialsAuth({
+      tokenUrl: 'https://i/token',
+      clientId: 'a',
+      clientSecret: 'b',
+      retries: 3,
+      retryBaseDelayMs: 0,
+      fetch,
+    });
+    expect(await auth.headers()).toEqual({ Authorization: 'Bearer AT' });
+    expect(n).toBe(3);
   });
 });
 

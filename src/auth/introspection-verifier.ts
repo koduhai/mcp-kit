@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import type { OAuthTokenVerifier } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
-import { DEFAULT_TIMEOUT_MS, fetchWithTimeout } from '../internal/http.js';
+import { DEFAULT_TIMEOUT_MS, fetchWithRetry } from '../internal/http.js';
 
 export interface IntrospectionVerifierOptions {
   /** The OAuth 2.0 token introspection endpoint (RFC 7662). */
@@ -23,6 +23,10 @@ export interface IntrospectionVerifierOptions {
   maxCacheEntries?: number;
   /** Timeout (ms) for the introspection request. Default 10000. Pass 0 to disable. */
   timeoutMs?: number;
+  /** Retries for transient introspection failures (network, 429, 5xx). Default 0. */
+  retries?: number;
+  /** Base backoff (ms), doubled each retry. Default 200. */
+  retryBaseDelayMs?: number;
   /** Injectable clock (ms). */
   now?: () => number;
   /** Injectable for tests. */
@@ -71,11 +75,12 @@ export function introspectionVerifier(opts: IntrospectionVerifierOptions): OAuth
 
     let res: Response;
     try {
-      res = await fetchWithTimeout(
+      res = await fetchWithRetry(
         fetchImpl,
         opts.introspectionUrl,
         { method: 'POST', headers, body },
         timeoutMs,
+        { retries: opts.retries, retryBaseDelayMs: opts.retryBaseDelayMs },
       );
     } catch (e) {
       throw new InvalidTokenError(

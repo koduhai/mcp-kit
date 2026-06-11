@@ -165,6 +165,25 @@ describe('introspectionVerifier', () => {
     await expect(v.verifyAccessToken('tok')).rejects.toBeInstanceOf(InvalidTokenError);
   });
 
+  it('retries a transient 503 introspection response and succeeds', async () => {
+    let n = 0;
+    const fetch = vi.fn(async () => {
+      n++;
+      if (n < 3) return new Response('', { status: 503 });
+      return new Response(JSON.stringify({ active: true, client_id: 'c' }), { status: 200 });
+    }) as unknown as typeof globalThis.fetch;
+    const info = await introspectionVerifier({
+      introspectionUrl: URL_,
+      clientId: 'rs',
+      clientSecret: 's',
+      retries: 3,
+      retryBaseDelayMs: 0,
+      fetch,
+    }).verifyAccessToken('tok');
+    expect(info.clientId).toBe('c');
+    expect(n).toBe(3);
+  });
+
   it('supports post-body client auth', async () => {
     const seen: { headers: Headers; body: string }[] = [];
     const fetch = fetchReturning(200, { active: true, exp: Math.floor(Date.now() / 1000) + 60 }, (r) =>
