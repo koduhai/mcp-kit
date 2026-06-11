@@ -59,9 +59,12 @@ export function jwtVerifier(opts: JwtVerifierOptions): OAuthTokenVerifier {
     resolving = (async () => {
       let jwksUri = opts.jwksUri;
       if (!jwksUri) {
-        const meta = (await discoverOAuthMetadata(opts.issuer, { fetch: opts.fetch })) as { jwks_uri?: string };
+        const meta = (await discoverOAuthMetadata(opts.issuer, { fetch: opts.fetch })) as {
+          jwks_uri?: string;
+        };
         jwksUri = meta.jwks_uri;
-        if (!jwksUri) throw new Error('jwtVerifier: issuer metadata has no jwks_uri; pass `jwksUri` or `key`');
+        if (!jwksUri)
+          throw new Error('jwtVerifier: issuer metadata has no jwks_uri; pass `jwksUri` or `key`');
       }
       keyInput = createRemoteJWKSet(new URL(jwksUri));
       return keyInput;

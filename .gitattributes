@@ -1,0 +1,6 @@
+# Normalize line endings to LF in the repo so Prettier's format:check is
+# deterministic across Windows/macOS/Linux contributors.
+* text=auto eol=lf
+
+# Keep lockfiles and generated diffs out of review noise.
+package-lock.json -diff linguist-generated

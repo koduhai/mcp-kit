@@ -1,0 +1,49 @@
+name: Release
+
+# Publishes to npm when a semver tag (e.g. v0.2.0) is pushed.
+# Uses npm Trusted Publishing (OIDC) — no NPM_TOKEN secret required.
+# One-time setup: on npmjs.com, add this repo + workflow as a trusted publisher for
+# the @koduhai/mcp-kit package (Settings -> Publishing access -> Trusted Publisher).
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC trusted publishing + provenance
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+
+      # Verify the package is sound before publishing anything.
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # Fail fast if the tag (v1.2.3) doesn't match package.json's version (1.2.3).
+      - name: Verify tag matches package version
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$PKG_VERSION" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${PKG_VERSION}"
+            exit 1
+          fi
+
+      # npm >= 11.5.1 performs the OIDC exchange automatically; provenance is implied
+      # for trusted publishing but we pass it explicitly for clarity.
+      - name: Publish
+        run: npm publish --provenance --access public

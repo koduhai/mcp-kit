@@ -27,7 +27,10 @@ const { requireAuth } = await protectMcpServer({
 
 app.post('/mcp', requireAuth, async (req, res) => {
   // req.auth is populated by the guard: { clientId, scopes, expiresAt, extra }
-  const server = new Server({ name: 'example-remote-mcp', version: '1.0.0' }, { capabilities: { tools: {} } });
+  const server = new Server(
+    { name: 'example-remote-mcp', version: '1.0.0' },
+    { capabilities: { tools: {} } },
+  );
   // ... register your tools on `server` here ...
 
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });

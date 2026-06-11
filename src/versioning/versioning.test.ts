@@ -20,7 +20,9 @@ describe('apiVersioning', () => {
   });
 
   it('throws when the pinned version is not in the supported set', () => {
-    expect(() => apiVersioning({ header: 'H', version: 'x', supported: ['a', 'b'] })).toThrow(/not in supported/);
+    expect(() => apiVersioning({ header: 'H', version: 'x', supported: ['a', 'b'] })).toThrow(
+      /not in supported/,
+    );
   });
 
   it('requires header and version', () => {

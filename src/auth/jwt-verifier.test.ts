@@ -15,7 +15,11 @@ async function sign(
   claims: Record<string, unknown>,
   { exp = '1h', aud = AUD, iss = ISS }: { exp?: string | number; aud?: string; iss?: string } = {},
 ): Promise<string> {
-  const jwt = new SignJWT(claims).setProtectedHeader({ alg: 'RS256' }).setIssuedAt().setIssuer(iss).setAudience(aud);
+  const jwt = new SignJWT(claims)
+    .setProtectedHeader({ alg: 'RS256' })
+    .setIssuedAt()
+    .setIssuer(iss)
+    .setAudience(aud);
   jwt.setExpirationTime(exp);
   return jwt.sign(privateKey);
 }
@@ -23,7 +27,11 @@ async function sign(
 describe('jwtVerifier', () => {
   it('accepts a valid token and maps claims to AuthInfo', async () => {
     const { publicKey, privateKey } = await keys();
-    const token = await sign(privateKey, { sub: 'user-1', client_id: 'client-1', scope: 'mcp:tools mcp:read' });
+    const token = await sign(privateKey, {
+      sub: 'user-1',
+      client_id: 'client-1',
+      scope: 'mcp:tools mcp:read',
+    });
     const verifier = jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey });
 
     const info = await verifier.verifyAccessToken(token);
@@ -42,33 +50,33 @@ describe('jwtVerifier', () => {
   it('rejects an expired token', async () => {
     const { publicKey, privateKey } = await keys();
     const token = await sign(privateKey, { sub: 'u' }, { exp: Math.floor(Date.now() / 1000) - 3600 });
-    await expect(jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey }).verifyAccessToken(token)).rejects.toBeInstanceOf(
-      InvalidTokenError,
-    );
+    await expect(
+      jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey }).verifyAccessToken(token),
+    ).rejects.toBeInstanceOf(InvalidTokenError);
   });
 
   it('rejects a token minted for a different audience', async () => {
     const { publicKey, privateKey } = await keys();
     const token = await sign(privateKey, { sub: 'u' }, { aud: 'https://other.example.com' });
-    await expect(jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey }).verifyAccessToken(token)).rejects.toBeInstanceOf(
-      InvalidTokenError,
-    );
+    await expect(
+      jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey }).verifyAccessToken(token),
+    ).rejects.toBeInstanceOf(InvalidTokenError);
   });
 
   it('rejects a token from a different issuer', async () => {
     const { publicKey, privateKey } = await keys();
     const token = await sign(privateKey, { sub: 'u' }, { iss: 'https://evil.example.com' });
-    await expect(jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey }).verifyAccessToken(token)).rejects.toBeInstanceOf(
-      InvalidTokenError,
-    );
+    await expect(
+      jwtVerifier({ issuer: ISS, audience: AUD, key: publicKey }).verifyAccessToken(token),
+    ).rejects.toBeInstanceOf(InvalidTokenError);
   });
 
   it('rejects a token signed by the wrong key', async () => {
     const { privateKey } = await keys();
     const { publicKey: otherPub } = await keys();
     const token = await sign(privateKey, { sub: 'u' });
-    await expect(jwtVerifier({ issuer: ISS, audience: AUD, key: otherPub }).verifyAccessToken(token)).rejects.toBeInstanceOf(
-      InvalidTokenError,
-    );
+    await expect(
+      jwtVerifier({ issuer: ISS, audience: AUD, key: otherPub }).verifyAccessToken(token),
+    ).rejects.toBeInstanceOf(InvalidTokenError);
   });
 });

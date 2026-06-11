@@ -5,7 +5,12 @@
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema, McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  McpError,
+  ErrorCode,
+} from '@modelcontextprotocol/sdk/types.js';
 import { apiKeyAuth, createUpstreamFetch } from '@koduhai/mcp-kit/upstream';
 import { apiVersioning, versionTool, type ToolDescriptor } from '@koduhai/mcp-kit/versioning';
 
@@ -24,7 +29,12 @@ const tools: ToolDescriptor[] = [
   {
     name: 'get_widget',
     description: 'Fetch a widget by id.',
-    inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'], additionalProperties: false },
+    inputSchema: {
+      type: 'object',
+      properties: { id: { type: 'string' } },
+      required: ['id'],
+      additionalProperties: false,
+    },
     handler: async (args) => {
       const res = await api(`/widgets/${args.id}`);
       if (!res.ok) throw new Error(`API responded ${res.status}`);

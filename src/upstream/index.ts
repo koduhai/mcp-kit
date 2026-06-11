@@ -95,14 +95,16 @@ export function clientCredentialsAuth(opts: ClientCredentialsOptions): UpstreamA
       body,
     });
     const text = await res.text();
-    let json: Record<string, unknown> = {};
+    let json: Record<string, unknown>;
     try {
       json = text ? (JSON.parse(text) as Record<string, unknown>) : {};
     } catch {
       json = {};
     }
     if (!res.ok) {
-      throw new Error(`clientCredentialsAuth: token request failed (${res.status}): ${String(json.error ?? text)}`);
+      throw new Error(
+        `clientCredentialsAuth: token request failed (${res.status}): ${String(json.error ?? text)}`,
+      );
     }
     const token = json.access_token;
     if (typeof token !== 'string' || !token) {
@@ -122,7 +124,11 @@ export function clientCredentialsAuth(opts: ClientCredentialsOptions): UpstreamA
     return inflight;
   }
 
-  return { async headers() { return { Authorization: `Bearer ${await getToken()}` }; } };
+  return {
+    async headers() {
+      return { Authorization: `Bearer ${await getToken()}` };
+    },
+  };
 }
 
 /** A source of static-ish headers: an object, or a (possibly async) function returning one. */

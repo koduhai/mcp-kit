@@ -21,7 +21,12 @@ npm install @koduhai/mcp-kit
 Most MCP servers wrap an API and need to authenticate to it. Stop hand-rolling this.
 
 ```ts
-import { apiKeyAuth, bearerAuth, clientCredentialsAuth, createUpstreamFetch } from '@koduhai/mcp-kit/upstream';
+import {
+  apiKeyAuth,
+  bearerAuth,
+  clientCredentialsAuth,
+  createUpstreamFetch,
+} from '@koduhai/mcp-kit/upstream';
 
 // Static API key (defaults to `Authorization: Bearer <key>`; pass a header for raw keys)
 const auth = apiKeyAuth({ key: process.env.API_KEY! });
@@ -52,7 +57,7 @@ import { apiVersioning, versionTool } from '@koduhai/mcp-kit/versioning';
 const versioning = apiVersioning({
   header: 'Api-Version',
   version: '2026-01-01',
-  current: '2026-03-01',          // optional: flags drift
+  current: '2026-03-01', // optional: flags drift
   supported: ['2026-01-01', '2026-03-01'], // optional: refuses an unknown pin at startup
 });
 
@@ -78,7 +83,7 @@ const resourceServerUrl = 'https://mcp.example.com';
 const { requireAuth } = await protectMcpServer({
   app,
   resourceServerUrl,
-  issuer,                                                  // AS metadata + JWKS auto-discovered
+  issuer, // AS metadata + JWKS auto-discovered
   verifier: jwtVerifier({ issuer, audience: resourceServerUrl }),
   scopesSupported: ['mcp:tools'],
   requiredScopes: ['mcp:tools'],
@@ -88,6 +93,7 @@ app.post('/mcp', requireAuth, mcpHttpHandler); // req.auth is now populated
 ```
 
 That gives you, for free:
+
 - `GET /.well-known/oauth-protected-resource` → RFC 9728 metadata pointing at your IdP.
 - `401` on missing/invalid tokens with a `WWW-Authenticate: Bearer ... resource_metadata="..."` header, so compliant MCP clients can discover the auth server and start the flow.
 - JWT validation of signature (via the issuer's JWKS), `iss`, `aud` (this is what stops token-passthrough/confused-deputy attacks), `exp`/`nbf`, and scope enforcement.
@@ -112,9 +118,9 @@ See [`examples/`](./examples) for a full stdio server and a full remote OAuth se
 
 ## Design
 
-- **Layered, optional peers.** `/upstream` and `/versioning` have zero dependencies. `/auth` declares `@modelcontextprotocol/sdk`, `express`, and `jose` as *optional* peers, so you only install them if you build a remote server.
+- **Layered, optional peers.** `/upstream` and `/versioning` have zero dependencies. `/auth` declares `@modelcontextprotocol/sdk`, `express`, and `jose` as _optional_ peers, so you only install them if you build a remote server.
 - **Injectable everything.** Every network call and clock is injectable, so the whole thing is tested offline (36 tests, including a real Express + token-verification integration).
-- **ESM, Node ≥ 18, TypeScript-first.**
+- **ESM, Node ≥ 20, TypeScript-first.**
 
 ## Compatibility
 

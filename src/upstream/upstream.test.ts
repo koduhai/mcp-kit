@@ -7,11 +7,15 @@ describe('apiKeyAuth', () => {
   });
 
   it('uses a raw value for a custom header', async () => {
-    expect(await apiKeyAuth({ key: 'k_123', header: 'X-Api-Key' }).headers()).toEqual({ 'X-Api-Key': 'k_123' });
+    expect(await apiKeyAuth({ key: 'k_123', header: 'X-Api-Key' }).headers()).toEqual({
+      'X-Api-Key': 'k_123',
+    });
   });
 
   it('honors an explicit scheme', async () => {
-    expect(await apiKeyAuth({ key: 't', header: 'X-Token', scheme: 'Token' }).headers()).toEqual({ 'X-Token': 'Token t' });
+    expect(await apiKeyAuth({ key: 't', header: 'X-Token', scheme: 'Token' }).headers()).toEqual({
+      'X-Token': 'Token t',
+    });
   });
 
   it('throws without a key', () => {
@@ -38,7 +42,10 @@ describe('clientCredentialsAuth', () => {
     const fetch = vi.fn(async () => {
       const body = responses[Math.min(calls, responses.length - 1)];
       calls++;
-      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
     });
     return { fetch, calls: () => calls };
   }
@@ -86,15 +93,27 @@ describe('clientCredentialsAuth', () => {
       await new Promise((r) => setTimeout(r, 5));
       return new Response(JSON.stringify({ access_token: 'AT', expires_in: 3600 }), { status: 200 });
     });
-    const auth = clientCredentialsAuth({ tokenUrl: 'https://i/token', clientId: 'a', clientSecret: 'b', fetch });
+    const auth = clientCredentialsAuth({
+      tokenUrl: 'https://i/token',
+      clientId: 'a',
+      clientSecret: 'b',
+      fetch,
+    });
     const [a, b] = await Promise.all([auth.headers(), auth.headers()]);
     expect(a).toEqual(b);
     expect(calls).toBe(1);
   });
 
   it('throws on a non-2xx token response', async () => {
-    const fetch = vi.fn(async () => new Response(JSON.stringify({ error: 'invalid_client' }), { status: 401 }));
-    const auth = clientCredentialsAuth({ tokenUrl: 'https://i/token', clientId: 'a', clientSecret: 'bad', fetch });
+    const fetch = vi.fn(
+      async () => new Response(JSON.stringify({ error: 'invalid_client' }), { status: 401 }),
+    );
+    const auth = clientCredentialsAuth({
+      tokenUrl: 'https://i/token',
+      clientId: 'a',
+      clientSecret: 'bad',
+      fetch,
+    });
     await expect(auth.headers()).rejects.toThrow(/invalid_client/);
   });
 });

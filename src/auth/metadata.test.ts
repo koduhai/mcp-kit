@@ -32,7 +32,11 @@ describe('discoverOAuthMetadata', () => {
   });
 
   it('throws when neither document is available', async () => {
-    const fetch = vi.fn(async () => new Response('nope', { status: 404 })) as unknown as typeof globalThis.fetch;
-    await expect(discoverOAuthMetadata('https://auth.example.com', { fetch })).rejects.toThrow(/could not load AS metadata/);
+    const fetch = vi.fn(
+      async () => new Response('nope', { status: 404 }),
+    ) as unknown as typeof globalThis.fetch;
+    await expect(discoverOAuthMetadata('https://auth.example.com', { fetch })).rejects.toThrow(
+      /could not load AS metadata/,
+    );
   });
 });

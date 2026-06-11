@@ -12,7 +12,10 @@ export interface DiscoverOptions {
  *
  * @throws when neither well-known document can be fetched.
  */
-export async function discoverOAuthMetadata(issuer: string, opts: DiscoverOptions = {}): Promise<OAuthMetadata> {
+export async function discoverOAuthMetadata(
+  issuer: string,
+  opts: DiscoverOptions = {},
+): Promise<OAuthMetadata> {
   const fetchImpl = opts.fetch ?? globalThis.fetch;
   const base = issuer.replace(/\/+$/, '');
   const candidates = [
