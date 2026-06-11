@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify, customFetch } from 'jose';
 import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import type { OAuthTokenVerifier } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
@@ -28,7 +28,7 @@ export interface JwtVerifierOptions {
   scopeClaim?: string;
   /** Provide the key directly (a `KeyLike`/JWKS/resolver) instead of discovering it. Mainly for tests. */
   key?: JwtKeyInput;
-  /** Injectable fetch for discovery. */
+  /** Injectable fetch for issuer discovery and the JWKS request. */
   fetch?: typeof globalThis.fetch;
 }
 
@@ -73,7 +73,12 @@ export function jwtVerifier(opts: JwtVerifierOptions): OAuthTokenVerifier {
           throw new Error('jwtVerifier: issuer metadata has no jwks_uri; pass `jwksUri` or `key`');
       }
       const jwksTimeout = opts.timeoutMs && opts.timeoutMs > 0 ? opts.timeoutMs : DEFAULT_TIMEOUT_MS;
-      keyInput = createRemoteJWKSet(new URL(jwksUri), { timeoutDuration: jwksTimeout });
+      keyInput = createRemoteJWKSet(new URL(jwksUri), {
+        timeoutDuration: jwksTimeout,
+        // Route the JWKS fetch through the injected fetch too, so the whole
+        // discovery -> JWKS -> verify path is exercisable offline in tests.
+        ...(opts.fetch ? { [customFetch]: opts.fetch } : {}),
+      });
       return keyInput;
     })();
     try {
