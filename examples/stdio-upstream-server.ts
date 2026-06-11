@@ -1,18 +1,13 @@
 /**
  * Example: an MCP stdio server that wraps a REST API, using mcp-kit for upstream auth
- * and API versioning. Run with an API_KEY env var. Reference snippet (not compiled by the
- * package build).
+ * and API versioning. Run with an API_KEY env var. Typechecked in CI against the built
+ * package (see examples/tsconfig.json).
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  McpError,
-  ErrorCode,
-} from '@modelcontextprotocol/sdk/types.js';
 import { apiKeyAuth, createUpstreamFetch } from '@koduhai/mcp-kit/upstream';
 import { apiVersioning, versionTool, type ToolDescriptor } from '@koduhai/mcp-kit/versioning';
+import { serveTools } from '@koduhai/mcp-kit/server';
 
 // Pin the upstream API version; `current` lets get_version report drift.
 const versioning = apiVersioning({ header: 'Api-Version', version: '2026-01-01', current: '2026-03-01' });
@@ -45,15 +40,7 @@ const tools: ToolDescriptor[] = [
 
 const server = new Server({ name: 'example-mcp', version: '1.0.0' }, { capabilities: { tools: {} } });
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema })),
-}));
-
-server.setRequestHandler(CallToolRequestSchema, async (req) => {
-  const tool = tools.find((t) => t.name === req.params.name);
-  if (!tool) throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${req.params.name}`);
-  const result = await tool.handler((req.params.arguments ?? {}) as Record<string, unknown>);
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-});
+// serveTools wires tools/list + tools/call for the descriptors above.
+serveTools(server, tools);
 
 await server.connect(new StdioServerTransport());

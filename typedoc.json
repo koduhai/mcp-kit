@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/upstream/index.ts",
+    "src/versioning/index.ts",
+    "src/auth/index.ts",
+    "src/server/index.ts"
+  ],
+  "out": "docs",
+  "readme": "none",
+  "excludeInternal": true,
+  "githubPages": false,
+  "treatWarningsAsErrors": true,
+  "externalSymbolLinkMappings": {
+    "@modelcontextprotocol/sdk": {
+      "OAuthTokenVerifier": "https://github.com/modelcontextprotocol/typescript-sdk"
+    }
+  }
+}

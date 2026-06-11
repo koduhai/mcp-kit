@@ -21,6 +21,8 @@ Built on top of `@modelcontextprotocol/sdk`. Aligned to the **2025-06-18** autho
 npm install @koduhai/mcp-kit
 ```
 
+📚 [API reference](https://koduhai.github.io/mcp-kit/) · 🔌 [IdP recipes](./RECIPES.md) (Auth0, Keycloak, Okta, Clerk, …)
+
 ---
 
 ## 1. Upstream auth — `@koduhai/mcp-kit/upstream`
@@ -120,7 +122,7 @@ const verifier = introspectionVerifier({
 
 Introspection results are cached for a short TTL (capped by the token's own `exp`) and deduplicated while a call is in flight, so a busy server doesn't introspect the same token on every request. Caching delays revocation visibility by at most the TTL; set `cacheTtlSeconds: 0` if every request must hit the AS.
 
-Works with any standards-compliant IdP: Auth0, Logto, Clerk, Keycloak, Okta, Cognito, WorkOS, and friends. mcp-kit verifies tokens; it does not try to be your Authorization Server (the spec says don't, and you shouldn't).
+Works with any standards-compliant IdP: Auth0, Logto, Clerk, Keycloak, Okta, Cognito, WorkOS, and friends — see [RECIPES.md](./RECIPES.md) for per-provider configs. mcp-kit verifies tokens; it does not try to be your Authorization Server (the spec says don't, and you shouldn't).
 
 See [`examples/`](./examples) for a full stdio server and a full remote OAuth server.
 
