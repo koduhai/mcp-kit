@@ -45,7 +45,9 @@ export function introspectionVerifier(opts: IntrospectionVerifierOptions): OAuth
       try {
         res = await fetchImpl(opts.introspectionUrl, { method: 'POST', headers, body });
       } catch (e) {
-        throw new InvalidTokenError(`introspection request failed: ${e instanceof Error ? e.message : String(e)}`);
+        throw new InvalidTokenError(
+          `introspection request failed: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
       if (!res.ok) throw new InvalidTokenError(`introspection endpoint returned HTTP ${res.status}`);
 

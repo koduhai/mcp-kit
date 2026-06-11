@@ -58,7 +58,8 @@ export interface ProtectMcpServerResult {
 export async function protectMcpServer(opts: ProtectMcpServerOptions): Promise<ProtectMcpServerResult> {
   const resourceServerUrl = new URL(opts.resourceServerUrl.toString());
   const metadata =
-    opts.oauthMetadata ?? (opts.issuer ? await discoverOAuthMetadata(opts.issuer, { fetch: opts.fetch }) : undefined);
+    opts.oauthMetadata ??
+    (opts.issuer ? await discoverOAuthMetadata(opts.issuer, { fetch: opts.fetch }) : undefined);
   if (!metadata) throw new Error('protectMcpServer: provide either `oauthMetadata` or `issuer`');
 
   opts.app.use(

@@ -16,7 +16,12 @@ const OAUTH_METADATA = {
 const verifier: OAuthTokenVerifier = {
   async verifyAccessToken(token: string) {
     if (token === 'good') {
-      return { token, clientId: 'client-1', scopes: ['mcp:tools'], expiresAt: Math.floor(Date.now() / 1000) + 3600 };
+      return {
+        token,
+        clientId: 'client-1',
+        scopes: ['mcp:tools'],
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      };
     }
     throw new InvalidTokenError('bad token');
   },
