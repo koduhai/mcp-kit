@@ -1,5 +1,11 @@
 # @koduhai/mcp-kit
 
+[![CI](https://github.com/koduhai/mcp-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/koduhai/mcp-kit/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@koduhai/mcp-kit.svg)](https://www.npmjs.com/package/@koduhai/mcp-kit)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/koduhai/mcp-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/koduhai/mcp-kit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Node](https://img.shields.io/node/v/@koduhai/mcp-kit.svg)](https://nodejs.org)
+
 The two things people get wrong building [MCP](https://modelcontextprotocol.io) servers, solved: **auth** and **versioning**.
 
 It does three things, on three import paths so the lightweight parts pull no heavy deps:
