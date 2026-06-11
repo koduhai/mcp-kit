@@ -89,8 +89,10 @@ turns those commits into the version bump and `CHANGELOG.md` entry:
   footer in the PR body → major release.
 - `chore:`/`docs:`/`ci:`/etc. don't trigger a release on their own.
 
-A CI check (**Validate PR title**) enforces this, so a non-conforming title blocks merge.
-Your local commits can be messy — they get squashed away.
+A CI check (**Validate PR title**) enforces the title, so a non-conforming title blocks
+merge. A husky `commit-msg` hook (installed automatically by `npm install`) also runs
+commitlint on each local commit — bypass it with `git commit --no-verify` if you need to.
+Local commits are squashed on merge, so the PR title is what lands on `main`.
 
 ## Opening a pull request
 
